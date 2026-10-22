@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace felmero
@@ -74,15 +71,21 @@ namespace felmero
         {
             employees = db.GetAllEmployees();
 
-            // LINQ Select: pick only the columns we want to show
+            // LINQ Select: pick only the columns we want to show (property names in English - PDF rule)
             dataGridViewEmployees.DataSource = employees.Select(employee => new
             {
                 employee.Id,
-                Nev = employee.Name,
-                Munkakor = employee.GetRoleName(),
-                Senioritas = employee is Programmer ? ((Programmer)employee).Seniority.ToString() : "-",
-                HaviBer = employee.MonthlySalary
+                employee.Name,
+                Role = employee.GetRoleName(),
+                Seniority = employee is Programmer ? ((Programmer)employee).Seniority.ToString() : "-",
+                employee.MonthlySalary
             }).ToList();
+
+            // Hungarian captions are allowed on the UI, so only the column headers are translated
+            dataGridViewEmployees.Columns["Name"].HeaderText = "Név";
+            dataGridViewEmployees.Columns["Role"].HeaderText = "Munkakör";
+            dataGridViewEmployees.Columns["Seniority"].HeaderText = "Senioritás";
+            dataGridViewEmployees.Columns["MonthlySalary"].HeaderText = "Havi bruttó bér (RON)";
 
             labelEmployeeCount.Text = "Munkatársak: " + employees.Count;
 

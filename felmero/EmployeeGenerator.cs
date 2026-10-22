@@ -50,11 +50,25 @@ namespace felmero
             {
                 // nextId % 3 is 0, 1 or 2 -> Junior, Mid, Senior in turn
                 var seniority = (SeniorityLevel)(nextId % 3);
-                employees.Add(new Programmer(nextId, MakeName(nextId), random.Next(6000, 20001), seniority));
+                employees.Add(new Programmer(nextId, MakeName(nextId), GetProgrammerSalary(random, seniority), seniority));
                 nextId++;
             }
 
             return employees;
+        }
+
+        // Salary range matching the seniority (same ranges as the loops above), so a Senior never earns less than a Junior
+        private static int GetProgrammerSalary(Random random, SeniorityLevel seniority)
+        {
+            switch (seniority)
+            {
+                case SeniorityLevel.Junior:
+                    return random.Next(6000, 9001);
+                case SeniorityLevel.Mid:
+                    return random.Next(10000, 14001);
+                default:
+                    return random.Next(15000, 20001);
+            }
         }
 
         // Picks a last name and a first name based on the Id, e.g. Id 1 -> "Kovacs Bence"
