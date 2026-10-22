@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -14,6 +15,12 @@ namespace felmero
         [STAThread]
         static void Main()
         {
+            // Every Trace.WriteLine(...) in the program goes into trace.txt (next to the exe).
+            // The listener appends, so older log lines are kept between runs.
+            Trace.Listeners.Add(new TextWriterTraceListener("trace.txt"));
+            // Write each line to the file immediately -> the file is complete even after closing the app
+            Trace.AutoFlush = true;
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Form1());

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using System.Text;
@@ -135,6 +136,75 @@ namespace felmero
             }
 
             throw new InvalidOperationException("Unknown employee role: " + role);
+        }
+
+        // Saves an accepted project and its developers. Returns the new project Id.
+        // Transaction = all or nothing: if one assignment fails, the project is not saved either.
+        public long SaveProject(string name, decimal estimatedBudget, decimal calculatedCost,
+                                int pmEmployeeId, decimal pmHours, List<TeamMember> team)
+        {
+            using (var connection = OpenConnection())
+            using (var transaction = connection.BeginTransaction())
+            {
+                long projectId;
+
+                // 1) the project row; last_insert_rowid() gives back the Id SQLite just generated
+                using (var command = new SQLiteCommand(
+                    "INSERT INTO Projects (Name, EstimatedBudget, CalculatedCost, PmEmployeeId, PmHours) " +
+                    "VALUES (@Name, @EstimatedBudget, @CalculatedCost, @PmEmployeeId, @PmHours); " +
+                    "SELECT last_insert_rowid();", connection, transaction))
+                {
+                    command.Parameters.AddWithValue("@Name", name);
+                    command.Parameters.AddWithValue("@EstimatedBudget", estimatedBudget);
+                    command.Parameters.AddWithValue("@CalculatedCost", calculatedCost);
+                    command.Parameters.AddWithValue("@PmEmployeeId", pmEmployeeId);
+                    command.Parameters.AddWithValue("@PmHours", pmHours);
+                    projectId = Convert.ToInt64(command.ExecuteScalar());
+                }
+
+                // 2) one ProjectAssignments row per developer
+                foreach (TeamMember member in team)
+                {
+                    using (var command = new SQLiteCommand(
+                        "INSERT INTO ProjectAssignments (ProjectId, EmployeeId, AllocatedHours) " +
+                        "VALUES (@ProjectId, @EmployeeId, @AllocatedHours)", connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@ProjectId", projectId);
+                        command.Parameters.AddWithValue("@EmployeeId", member.Programmer.Id);
+                        command.Parameters.AddWithValue("@AllocatedHours", member.AllocatedHours);
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                // 3) only now is everything really written to the file
+                transaction.Commit();
+                return projectId;
+            }
+        }
+
+        // Loads the accepted projects for the grid (PM name + developers with hours joined in)
+        public DataTable GetAcceptedProjects()
+        {
+            const string sql = @"
+                SELECT p.Id,
+                       p.Name,
+                       p.EstimatedBudget,
+                       p.CalculatedCost,
+                       pm.Name AS ProjectManager,
+                       p.PmHours,
+                       (SELECT group_concat(e.Name || ' (' || a.AllocatedHours || 'h)', ', ')
+                          FROM ProjectAssignments a
+                          JOIN Employees e ON e.Id = a.EmployeeId
+                         WHERE a.ProjectId = p.Id) AS Developers
+                  FROM Projects p
+                  JOIN Employees pm ON pm.Id = p.PmEmployeeId
+                 ORDER BY p.Id";
+
+            var table = new DataTable();
+            using (var connection = OpenConnection())
+            using (var adapter = new SQLiteDataAdapter(sql, connection))
+                adapter.Fill(table);
+            return table;
         }
     }
 }

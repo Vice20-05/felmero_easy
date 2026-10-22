@@ -6,10 +6,10 @@ namespace felmero
     internal static class EmployeeGenerator
     {
         private static readonly string[] FirstNames =
-            { "Anna", "Bence", "Csaba", "Dora", "Erik", "Flora", "Gabor", "Hanna", "Istvan", "Julia" };
+            { "Anna", "Bence", "Csaba", "Dora", "Erik", "Flora", "Gabor", "Hanna", "Istvan", "Julia","Mark","Istvan", "Alex", "Ben", "Cathy" };
 
         private static readonly string[] LastNames =
-            { "Kovacs", "Szabo", "Nagy", "Toth", "Varga", "Kiss", "Molnar", "Farkas", "Balogh", "Papp" };
+            { "Kovacs", "Szabo", "Nagy", "Toth", "Varga", "Kiss", "Molnar", "Farkas", "Balogh", "Papp","Pop","Iulian","Vargyas","Csiki" };
 
         public const int TotalEmployees = 100;
 
