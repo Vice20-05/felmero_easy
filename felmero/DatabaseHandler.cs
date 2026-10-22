@@ -8,19 +8,30 @@ using System.Threading.Tasks;
 
 namespace felmero
 {
+    // Every SQLite operation of the app is in this class (ADO.NET: connection -> command -> execute).
+    // All SQL with values uses @parameters, never string concatenation (protects against SQL injection).
     internal class DatabaseHandler
     {
+        // agency.db is a relative path -> the file is next to felmero.exe (bin\Debug).
+        // SQLite creates the file automatically the first time it is opened.
         private const string SqliteConnectionString = "Data Source=agency.db;Version=3;";
 
+        // Opens a new connection. Callers put it in "using", so it is always closed afterwards.
         private SQLiteConnection OpenConnection()
         {
             var connection = new SQLiteConnection(SqliteConnectionString);
             connection.Open();
+            // SQLite ignores REFERENCES (foreign keys) unless this is switched on for each connection
             using (var pragma = new SQLiteCommand("PRAGMA foreign_keys = ON;", connection))
                 pragma.ExecuteNonQuery();
             return connection;
         }
 
+        // Creates the 3 tables required by the PDF. "IF NOT EXISTS" -> safe to call at every startup,
+        // existing data is never deleted.
+        //  - Employees.Seniority can be NULL: only programmers have one
+        //  - Projects.Id is AUTOINCREMENT: SQLite gives the next Id
+        //  - ProjectAssignments has PRIMARY KEY (ProjectId, EmployeeId): a developer only once per project
         public void EnsureCreated()
         {
             string sql = @"
@@ -47,9 +58,10 @@ namespace felmero
                 );";
             using (var connection = OpenConnection())
             using (var command = new SQLiteCommand(sql, connection))
-                command.ExecuteNonQuery();
+                command.ExecuteNonQuery();   // NonQuery = command that returns no rows (CREATE, INSERT...)
         }
 
+        // How many employees are in the DB. ExecuteScalar = returns a single value.
         public int GetEmployeeCount()
         {
             using (var connection = OpenConnection())
@@ -57,6 +69,10 @@ namespace felmero
                 return Convert.ToInt32(command.ExecuteScalar());
         }
 
+        // Inserts one employee. Returns true if the row was really inserted,
+        // false if an employee with this Id already exists (so Generate twice = no duplicates).
+        // Form1 writes the DB_INSERT trace line only when this returns true.
+        // seniority = null for non-programmers -> stored as NULL.
         public bool InsertEmployee(int id, string name, string role, string seniority, decimal monthlySalary)
         {
             using (var connection = OpenConnection())
@@ -69,6 +85,7 @@ namespace felmero
                 command.Parameters.AddWithValue("@MonthlySalary", monthlySalary);
                 try
                 {
+                    // ExecuteNonQuery returns how many rows changed -> 1 = inserted
                     return command.ExecuteNonQuery() > 0;
                 }
                 catch (SQLiteException ex) when (ex.ResultCode == SQLiteErrorCode.Constraint)
@@ -78,6 +95,9 @@ namespace felmero
                 }
             }
         }
+
+        // Reads every employee and turns each row back into the right C# object
+        // (Programmer / ProjectManager / Director / HrDirector), so the form can use LINQ on them.
         public List<Employee> GetAllEmployees()
         {
             var employees = new List<Employee>();
@@ -85,9 +105,9 @@ namespace felmero
 
             using (var connection = OpenConnection())
             using (var command = new SQLiteCommand(sql, connection))
-            using (var reader = command.ExecuteReader())
+            using (var reader = command.ExecuteReader())   // reader = goes through the result row by row
             {
-                while (reader.Read())
+                while (reader.Read())   // false when there are no more rows
                 {
                     int id = Convert.ToInt32(reader["Id"]);
                     string name = Convert.ToString(reader["Name"]);
@@ -104,6 +124,8 @@ namespace felmero
             return employees;
         }
 
+        // Role text from the DB -> the matching C# class.
+        // "HR Director" is checked before "Director", so an HR director is not loaded as a plain Director.
         private static Employee CreateEmployee(int id, string name, string role, string seniority, decimal monthlySalary)
         {
             if (string.Equals(role, "HR Director", StringComparison.OrdinalIgnoreCase))
@@ -118,6 +140,8 @@ namespace felmero
             if (string.Equals(role, "Programmer", StringComparison.OrdinalIgnoreCase) ||
                 role.EndsWith(" Programmer", StringComparison.OrdinalIgnoreCase))
             {
+                // Normally Seniority is "Junior"/"Mid"/"Senior" -> Enum.TryParse below handles it.
+                // If it is empty, the level is worked out from the role text instead.
                 SeniorityLevel level;
                 string value = string.IsNullOrWhiteSpace(seniority) ? role : seniority;
 
