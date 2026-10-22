@@ -121,6 +121,9 @@ ipch/
 # Visual Studio Trace Files
 *.e2e
 
+# Application trace output
+where_trace_lives.txt
+
 # TFS 2012 Local Workspace
 $tf/
 

@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="where_trace_lives.txt" />
+  </Folder>
   <Project Path="felmero/felmero.csproj" Id="7d6be2b8-fb6f-46c7-a245-aabaa6c0542c" />
 </Solution>

@@ -2,7 +2,7 @@
 
 namespace felmero
 {
-    // Programmer level (PDF: Junior, Mid or Senior). Saved in the DB as text: "Junior" / "Mid" / "Senior".
+    // Programmer level (Junior, Mid or Senior). Saved in the DB as text: "Junior" / "Mid" / "Senior".
     public enum SeniorityLevel
     {
         Junior,
@@ -40,7 +40,7 @@ namespace felmero
         protected Employee(int id, string name, decimal monthlySalary)
             : base(id, name)
         {
-            // PDF: salaries must be positive
+            // Salaries must be positive
             if (monthlySalary <= 0)
             {
                 throw new ArgumentException("Salary must be positive.", nameof(monthlySalary));
@@ -49,7 +49,7 @@ namespace felmero
             MonthlySalary = monthlySalary;
         }
 
-        // PDF: HourlyRate = MonthlySalary / 160  (160 working hours in a month)
+        // HourlyRate = MonthlySalary / 160  (160 working hours in a month)
         public decimal GetHourlyRate()
         {
             return MonthlySalary / 160m;
@@ -64,7 +64,7 @@ namespace felmero
     // sealed = no class can inherit from it.
     internal sealed class Programmer : Employee
     {
-        // PDF: every programmer must have a seniority
+        // Every programmer must have a seniority
         public SeniorityLevel Seniority { get; private set; }
 
         public Programmer(int id, string name, decimal monthlySalary, SeniorityLevel seniority)
@@ -90,7 +90,7 @@ namespace felmero
         }
     }
 
-    // NOT sealed, because HrDirector inherits from it (PDF requirement).
+    // NOT sealed, because HrDirector inherits from it.
     // Can be listed, but cannot be put into a project team.
     internal class Director : Employee
     {

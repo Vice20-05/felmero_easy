@@ -22,7 +22,7 @@ namespace felmero
         }
     }
 
-    // All cost rules from the PDF in one place (LINQ runs on the C# list, not in SQL)
+    // All cost rules in one place (LINQ runs on the C# list, not in SQL)
     internal static class ProjectCalculator
     {
         // PM works 20% of the developer hours

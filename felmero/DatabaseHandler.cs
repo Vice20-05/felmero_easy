@@ -24,7 +24,7 @@ namespace felmero
             return connection;
         }
 
-        // Creates the 3 tables required by the PDF. "IF NOT EXISTS" -> safe to call at every startup,
+        // Creates the 3 tables of the app. "IF NOT EXISTS" -> safe to call at every startup,
         // existing data is never deleted.
         //  - Employees.Seniority can be NULL: only programmers have one
         //  - Projects.Id is AUTOINCREMENT: SQLite gives the next Id

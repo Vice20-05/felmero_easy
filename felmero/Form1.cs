@@ -53,7 +53,7 @@ namespace felmero
                 if (inserted)
                 {
                     insertedCount++;
-                    // Log only AFTER the insert succeeded (PDF requirement)
+                    // Log only AFTER the insert succeeded
                     Trace.WriteLine($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} DB_INSERT table=Employees id={employee.Id}");
                 }
             }
@@ -71,7 +71,7 @@ namespace felmero
         {
             employees = db.GetAllEmployees();
 
-            // LINQ Select: pick only the columns we want to show (property names in English - PDF rule)
+            // LINQ Select: pick only the columns we want to show (property names stay in English)
             dataGridViewEmployees.DataSource = employees.Select(employee => new
             {
                 employee.Id,
@@ -93,8 +93,16 @@ namespace felmero
             comboBoxProjectManager.DataSource = employees.OfType<ProjectManager>().ToList();
             comboBoxProjectManager.DisplayMember = "Name";
 
-            // Only programmers can be developers in the team
-            comboBoxProgrammer.DataSource = employees.OfType<Programmer>().ToList();
+            // Only programmers can be developers in the team.
+            // LINQ Where: keeps only the employees that are Programmer objects,
+            // Cast: turns them from Employee into Programmer,
+            // OrderBy / ThenBy: Junior -> Mid -> Senior, and alphabetically inside each level.
+            comboBoxProgrammer.DataSource = employees
+                .Where(employee => employee is Programmer)
+                .Cast<Programmer>()
+                .OrderBy(programmer => programmer.Seniority)
+                .ThenBy(programmer => programmer.Name)
+                .ToList();
             comboBoxProgrammer.DisplayMember = "Name";
         }
 
